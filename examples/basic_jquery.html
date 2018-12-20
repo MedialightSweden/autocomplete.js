@@ -1,66 +1,139 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-    <style>
-      .algolia-autocomplete {
-        width: 100%;
-      }
-      .algolia-autocomplete .aa-input, .algolia-autocomplete .aa-hint {
-        width: 100%;
-      }
-      .algolia-autocomplete .aa-hint {
-        color: #999;
-      }
-      .algolia-autocomplete .aa-dropdown-menu {
-        width: 100%;
-        background-color: #fff;
-        border: 1px solid #999;
-        border-top: none;
-      }
-      .algolia-autocomplete .aa-dropdown-menu .aa-suggestion {
-        cursor: pointer;
-        padding: 5px 4px;
-      }
-      .algolia-autocomplete .aa-dropdown-menu .aa-suggestion.aa-cursor {
-        background-color: #B2D7FF;
-      }
-      .algolia-autocomplete .aa-dropdown-menu .aa-suggestion em {
-        font-weight: bold;
-        font-style: normal;
-      }
+
+<head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+    crossorigin="anonymous">
+
+  <style>
+    [class^="jb-dropdown-dataset"] .jb-dropdown-suggestions {
+  padding-bottom: .5rem;
+  margin-bottom: .25rem;
+  border-bottom: 1px solid #ced4da;
+}
+
+[class^="jb-dropdown-dataset"]:last-of-type .jb-dropdown-suggestions {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.search-field {
+  width: 100%;
+}
+
+.search-field .hint {
+  color: #6c757d;
+}
+
+.dropdown-item em {
+  border-radius: .125rem;
+}
+
+.dropdown-item em,
+.dropdown-item.active {
+  font-style: normal;
+  color: #495057;
+  background-color: rgba(0, 169, 157, 0.25);
+}
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="row">
-        <div class="col-sm-6 col-sm-offset-3">
-          <form action="#" class="form">
-            <h3>Basic example</h3>
-            <input class="form-control" id="contacts" name="contacts" type="text" placeholder='Search by name' />
-          </form>
-        </div>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-6 col-sm-offset-3">
+        <form action="#" class="form">
+          <h3>Basic example</h3>
+          <input class="form-control" id="term-search" name="contacts" type="text" placeholder='Search by name' />
+          <input class="form-control" id="place-search" name="contacts" type="text" placeholder='Search by name' />
+        </form>
       </div>
     </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/autocomplete.js/0/autocomplete.jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js"></script>
-    <script>
-      var client = algoliasearch('latency', '6be0576ff61c053d5f9a3225e2a90f76');
-      var index = client.initIndex('contacts');
+  <script src="https://cdn.jsdelivr.net/jquery/3.2.1/jquery.min.js"></script>
+  <script src="../dist/autocomplete.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
+  <script>
 
-      $('#contacts').autocomplete({ hint: false }, [
+    autocomplete('#term-search', { hint: true, debug: false, tabAutocomplete: false, cssClasses: { noPrefix: true, root: "search-field", suggestion: "dropdown-item", suggestions: "jb-dropdown-suggestions", dataset: "jb-dropdown-dataset", cursor: "active" } },
+      [
         {
-          source: $.fn.autocomplete.sources.hits(index, { hitsPerPage: 5 }),
-          displayKey: 'name',
+          debounce: 250,
+          displayKey: "name",
+          source: function (query, callback) {
+            $.ajax({
+              type: "POST",
+              url: "http://192.168.1.15:5000/complete/workplace",
+              data: JSON.stringify(query),
+              success: function (data) {
+                callback(data);
+              },
+              dataType: "json",
+              contentType: "application/json"
+            });
+          },
           templates: {
-            suggestion: function(suggestion) {
-              return suggestion._highlightResult.name.value;
+            header: '<div class="dropdown-header">Plat</div>',
+            suggestion: function (suggestion) {
+              return suggestion.value;
+            }
+          }
+        },
+        {
+          debounce: 250,
+          displayKey: "name",
+          source: function (query, callback) {
+            $.ajax({
+              type: "POST",
+              url: "http://192.168.1.15:5000/complete/profession",
+              data: JSON.stringify(query),
+              success: function (data) {
+                callback(data);
+              },
+              dataType: "json",
+              contentType: "application/json"
+            });
+          },
+          templates: {
+            header: '<div class="dropdown-header">Yrke</div>',
+            suggestion: function (suggestion) {
+              return suggestion.value;
             }
           }
         }
-      ]);
-    </script>
-  </body>
+      ]).on("autocomplete:selected", function (event, suggestion, dataset, context) {
+        debugger;
+      });
+
+      autocomplete('#place-search', { hint: true, debug: false, tabAutocomplete: false, cssClasses: { noPrefix: true, root: "search-field", suggestion: "dropdown-item", suggestions: "jb-dropdown-suggestions", dataset: "jb-dropdown-dataset", cursor: "active" } },
+      [
+        {
+          debounce: 250,
+          displayKey: "name",
+          source: function (query, callback) {
+            $.ajax({
+              type: "POST",
+              url: "http://192.168.1.15:5000/complete/place",
+              data: JSON.stringify(query),
+              success: function (data) {
+                callback(data);
+              },
+              dataType: "json",
+              contentType: "application/json"
+            });
+          },
+          templates: {
+            suggestion: function (suggestion) {
+              return suggestion.value;
+            }
+          }
+        }
+      ]).on("autocomplete:selected", function (event, suggestion, dataset, context) {
+        debugger;
+      });
+  </script>
+</body>
+
 </html>
