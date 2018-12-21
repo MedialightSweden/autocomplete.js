@@ -6,23 +6,16 @@
     crossorigin="anonymous">
 
   <style>
-    [class^="jb-dropdown-dataset"] .jb-dropdown-suggestions {
-  padding-bottom: .5rem;
-  margin-bottom: .25rem;
-  border-bottom: 1px solid #ced4da;
+.jb-section-border {
+  margin-top: .5rem;
+  border-top: 1px solid #ced4da;
 }
 
-[class^="jb-dropdown-dataset"]:last-of-type .jb-dropdown-suggestions {
-  padding-bottom: 0;
-  margin-bottom: 0;
-  border-bottom: none;
-}
-
-.search-field {
+.jb-search-field {
   width: 100%;
 }
 
-.search-field .hint {
+.jb-search-field .hint {
   color: #6c757d;
 }
 
@@ -45,8 +38,10 @@
       <div class="col-sm-6 col-sm-offset-3">
         <form action="#" class="form">
           <h3>Basic example</h3>
-          <input class="form-control" id="term-search" name="contacts" type="text" placeholder='Search by name' />
-          <input class="form-control" id="place-search" name="contacts" type="text" placeholder='Search by name' />
+          <input class="form-control" id="term-search" name="term-search" type="text" placeholder='Search by name' />
+          <input type="hidden" id="term-search-hint" name="term-search-hint" value="full-text" />
+          <input class="form-control" id="place-search" name="place-search" type="text" placeholder='Search by name' />
+          <input type="hidden" id="place-search-hint" name="place-search-hint" value="full-text" />
         </form>
       </div>
     </div>
@@ -54,33 +49,18 @@
 
   <script src="https://cdn.jsdelivr.net/jquery/3.2.1/jquery.min.js"></script>
   <script src="../dist/autocomplete.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
   <script>
 
-    autocomplete('#term-search', { hint: true, debug: false, tabAutocomplete: false, cssClasses: { noPrefix: true, root: "search-field", suggestion: "dropdown-item", suggestions: "jb-dropdown-suggestions", dataset: "jb-dropdown-dataset", cursor: "active" } },
+    $("#term-search").on("keyup", function () {
+      $("#term-search-hint").val("full-text");
+    });
+
+    $("#place-search").on("keyup", function () {
+      $("#place-search-hint").val("full-text");
+    });
+
+    autocomplete('#term-search', { hint: true, debug: true, tabAutocomplete: false, cssClasses: { noPrefix: true, root: "jb-search-field", suggestion: "dropdown-item", suggestions: "jb-dropdown-suggestions", dataset: "jb-dropdown-dataset", cursor: "active" } },
       [
-        {
-          debounce: 250,
-          displayKey: "name",
-          source: function (query, callback) {
-            $.ajax({
-              type: "POST",
-              url: "http://192.168.1.15:5000/complete/workplace",
-              data: JSON.stringify(query),
-              success: function (data) {
-                callback(data);
-              },
-              dataType: "json",
-              contentType: "application/json"
-            });
-          },
-          templates: {
-            header: '<div class="dropdown-header">Plat</div>',
-            suggestion: function (suggestion) {
-              return suggestion.value;
-            }
-          }
-        },
         {
           debounce: 250,
           displayKey: "name",
@@ -102,12 +82,37 @@
               return suggestion.value;
             }
           }
+        },
+        {
+          debounce: 250,
+          displayKey: "name",
+          source: function (query, callback) {
+            $.ajax({
+              type: "POST",
+              url: "http://192.168.1.15:5000/complete/workplace",
+              data: JSON.stringify(query),
+              success: function (data) {
+                callback(data);
+              },
+              dataType: "json",
+              contentType: "application/json"
+            });
+          },
+          templates: {
+            header: '<div class="dropdown-header">Företag</div>',
+            suggestion: function (suggestion) {
+              return suggestion.value;
+            }
+          }
         }
       ]).on("autocomplete:selected", function (event, suggestion, dataset, context) {
-        debugger;
+        setTimeout(function () { $("#term-search-hint").val(dataset == 1 ? "profession" : "workplace"); }, 250);
+      }).on("autocomplete:updated", function(){
+        $(".jb-section-border").removeClass("jb-section-border");
+        $("[class^=jb-dropdown-dataset-]").not(":empty").not(":first").find(".dropdown-header").addClass("jb-section-border")
       });
 
-      autocomplete('#place-search', { hint: true, debug: false, tabAutocomplete: false, cssClasses: { noPrefix: true, root: "search-field", suggestion: "dropdown-item", suggestions: "jb-dropdown-suggestions", dataset: "jb-dropdown-dataset", cursor: "active" } },
+    autocomplete('#place-search', { hint: true, debug: false, tabAutocomplete: false, cssClasses: { noPrefix: true, root: "jb-search-field", suggestion: "dropdown-item", suggestions: "jb-dropdown-suggestions", dataset: "jb-dropdown-dataset", cursor: "active" } },
       [
         {
           debounce: 250,
@@ -115,7 +120,7 @@
           source: function (query, callback) {
             $.ajax({
               type: "POST",
-              url: "http://192.168.1.15:5000/complete/place",
+              url: "/complete/place",
               data: JSON.stringify(query),
               success: function (data) {
                 callback(data);
@@ -131,7 +136,7 @@
           }
         }
       ]).on("autocomplete:selected", function (event, suggestion, dataset, context) {
-        debugger;
+        setTimeout(function () { $("#place-search-hint").val("place"); }, 250);
       });
   </script>
 </body>
